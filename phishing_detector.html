@@ -3,456 +3,381 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Phishing Email Detector</title>
+  <title>Phishing Detector - by Saket</title>
   <style>
-    /* ── Page basics ── */
     body {
       margin: 0;
-      padding: 30px 20px;
-      background: #f0f4f8;
-      font-family: Arial, sans-serif;
-      color: #333;
+      padding: 40px 20px;
+      background: #1a1a2e;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #eee;
     }
 
     h1 {
       text-align: center;
-      font-size: 28px;
-      margin-bottom: 4px;
+      font-size: 26px;
+      color: #e94560;
+      margin-bottom: 6px;
     }
 
-    p.subtitle {
+    .subtitle {
       text-align: center;
-      color: #666;
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .built-by {
+      text-align: center;
+      font-size: 12px;
+      color: #555;
       margin-bottom: 30px;
     }
 
-    /* ── Main card ── */
-    .card {
-      background: white;
-      max-width: 700px;
+    .container {
+      max-width: 680px;
       margin: 0 auto;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
 
-    /* ── Textarea ── */
     textarea {
       width: 100%;
-      height: 200px;
-      padding: 12px;
-      font-size: 14px;
-      border: 2px solid #ddd;
+      height: 180px;
+      background: #16213e;
+      border: 1px solid #333;
       border-radius: 8px;
-      resize: vertical;
+      color: #ddd;
+      font-size: 13px;
+      padding: 12px;
       box-sizing: border-box;
-      font-family: Arial, sans-serif;
+      resize: vertical;
+      font-family: 'Segoe UI', Arial, sans-serif;
       line-height: 1.6;
     }
 
     textarea:focus {
       outline: none;
-      border-color: #4a90e2;
+      border-color: #e94560;
     }
 
-    /* ── Buttons ── */
-    .buttons {
+    textarea::placeholder { color: #444; }
+
+    .btn-row {
       display: flex;
       gap: 10px;
-      margin-top: 12px;
+      margin-top: 10px;
     }
 
-    button {
-      padding: 10px 20px;
+    .scan-btn {
+      flex: 1;
+      padding: 11px;
+      background: #e94560;
+      color: white;
       border: none;
       border-radius: 8px;
       font-size: 14px;
-      cursor: pointer;
       font-weight: bold;
+      cursor: pointer;
     }
 
-    #analyzeBtn {
-      background: #4a90e2;
-      color: white;
-      flex: 1;
+    .scan-btn:hover { background: #c73652; }
+
+    .clear-btn {
+      padding: 11px 18px;
+      background: #16213e;
+      color: #888;
+      border: 1px solid #333;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
     }
 
-    #analyzeBtn:hover { background: #357abd; }
+    .clear-btn:hover { background: #1e2a4a; }
 
-    #clearBtn {
-      background: #eee;
+    .examples {
+      margin-top: 12px;
+      font-size: 12px;
       color: #555;
     }
 
-    #clearBtn:hover { background: #ddd; }
-
-    /* ── Example buttons ── */
-    .examples {
-      margin-top: 14px;
-      font-size: 13px;
-      color: #888;
-    }
-
-    .examples span { margin-right: 8px; }
-
     .ex-btn {
-      padding: 5px 12px;
-      font-size: 12px;
+      background: transparent;
+      border: 1px solid #333;
+      color: #777;
+      padding: 4px 12px;
       border-radius: 20px;
-      border: 1px solid #ddd;
-      background: white;
+      font-size: 12px;
       cursor: pointer;
-      margin-right: 6px;
-      font-weight: normal;
+      margin-left: 6px;
     }
 
-    .ex-btn:hover { background: #f5f5f5; }
+    .ex-btn:hover { border-color: #e94560; color: #e94560; }
 
-    /* ── Results box ── */
-    #results {
-      margin-top: 24px;
-      display: none;
-    }
+    /* results */
+    #results { margin-top: 24px; display: none; }
 
-    .verdict-box {
-      padding: 16px 20px;
+    .verdict {
+      padding: 18px;
       border-radius: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       text-align: center;
     }
 
-    .verdict-box h2 {
-      margin: 0 0 6px 0;
-      font-size: 22px;
-    }
+    .verdict h2 { margin: 0 0 6px; font-size: 20px; }
+    .verdict p  { margin: 0; font-size: 13px; opacity: 0.8; }
 
-    .verdict-box p {
-      margin: 0;
-      font-size: 14px;
-      opacity: 0.85;
-    }
+    .danger  { background: #2d0a0a; border: 1px solid #e94560; color: #ff6b6b; }
+    .warning { background: #2d1a00; border: 1px solid #ff9500; color: #ffb347; }
+    .caution { background: #2d2a00; border: 1px solid #ffd700; color: #ffd700; }
+    .good    { background: #0a2d0a; border: 1px solid #28a745; color: #5cb85c; }
 
-    /* Verdict colors */
-    .high-risk  { background: #ffe5e5; border: 2px solid #ff4444; color: #cc0000; }
-    .suspicious { background: #fff4e0; border: 2px solid #ff9500; color: #cc6600; }
-    .low-risk   { background: #fffde0; border: 2px solid #f0c000; color: #886600; }
-    .safe       { background: #e6f9ee; border: 2px solid #28a745; color: #155724; }
-
-    /* ── Score bar ── */
-    .score-section { margin-bottom: 20px; }
-
-    .score-label {
+    .score-row {
       display: flex;
       justify-content: space-between;
       font-size: 13px;
-      color: #555;
+      color: #888;
       margin-bottom: 6px;
     }
 
     .bar-bg {
-      background: #eee;
+      background: #16213e;
       border-radius: 6px;
-      height: 12px;
+      height: 10px;
+      margin-bottom: 20px;
       overflow: hidden;
     }
 
     .bar-fill {
       height: 100%;
       border-radius: 6px;
-      transition: width 0.6s ease;
+      transition: width 0.5s ease;
     }
 
-    /* ── Findings ── */
-    .section-title {
-      font-size: 13px;
-      font-weight: bold;
+    .flags-title {
+      font-size: 12px;
       text-transform: uppercase;
-      color: #888;
       letter-spacing: 1px;
+      color: #555;
       margin-bottom: 10px;
     }
 
-    .finding {
-      background: #fff8f8;
-      border-left: 4px solid #ff4444;
+    .flag-card {
+      background: #16213e;
+      border-left: 3px solid #e94560;
       border-radius: 6px;
       padding: 12px 14px;
       margin-bottom: 10px;
     }
 
-    .finding-title {
-      font-weight: bold;
+    .flag-name {
       font-size: 14px;
-      margin-bottom: 6px;
+      font-weight: bold;
+      color: #e94560;
+      margin-bottom: 8px;
     }
 
-    /* ── Triggered lines ── */
     .triggered-line {
-      background: #f5f5f5;
+      background: #0f1626;
       border-radius: 4px;
-      padding: 5px 10px;
+      padding: 6px 10px;
       font-size: 12px;
-      color: #555;
+      color: #aaa;
       margin-top: 4px;
       font-family: monospace;
     }
 
-    .triggered-line span {
-      color: #cc0000;
-      font-weight: bold;
-    }
+    .highlight { color: #e94560; font-weight: bold; }
 
-    /* ── Safe message ── */
     .safe-msg {
       text-align: center;
-      color: #28a745;
-      font-size: 15px;
-      padding: 16px;
-      background: #e6f9ee;
+      color: #5cb85c;
+      background: #0a2d0a;
+      border: 1px solid #28a745;
       border-radius: 8px;
+      padding: 14px;
+      font-size: 14px;
     }
 
-    /* ── Tips ── */
     .tips {
       margin-top: 20px;
-      background: #f8f9ff;
+      background: #16213e;
       border-radius: 8px;
       padding: 14px 18px;
+      font-size: 13px;
+      color: #777;
+      line-height: 2;
     }
 
-    .tips ul {
-      margin: 8px 0 0 0;
-      padding-left: 18px;
-      font-size: 13px;
-      color: #555;
-      line-height: 1.9;
-    }
+    .tips strong { color: #aaa; display: block; margin-bottom: 4px; }
   </style>
 </head>
 <body>
 
+<div class="container">
+
   <h1>🛡️ Phishing Email Detector</h1>
-  <p class="subtitle">Paste an email below to check if it looks suspicious</p>
+  <p class="subtitle">Paste an email and I'll tell you if it looks sketchy.</p>
+  <p class="built-by">Built by Saket</p>
 
-  <div class="card">
+  <textarea id="emailBox" placeholder="Paste the email content here..."></textarea>
 
-    <textarea id="emailInput" placeholder="Paste the email content here..."></textarea>
-
-    <div class="buttons">
-      <button id="analyzeBtn" onclick="analyze()">🔍 Analyze Email</button>
-      <button id="clearBtn" onclick="clearAll()">Clear</button>
-    </div>
-
-    <div class="examples">
-      <span>Try an example:</span>
-      <button class="ex-btn" onclick="loadExample('phishing')">🚨 Phishing Email</button>
-      <button class="ex-btn" onclick="loadExample('safe')">✅ Safe Email</button>
-    </div>
-
-    <!-- Results show up here -->
-    <div id="results"></div>
-
+  <div class="btn-row">
+    <button class="scan-btn" onclick="scanEmail()">Scan This Email</button>
+    <button class="clear-btn" onclick="clearAll()">Clear</button>
   </div>
 
-  <script>
+  <div class="examples">
+    Try an example:
+    <button class="ex-btn" onclick="loadExample('phishing')">🚨 Phishing</button>
+    <button class="ex-btn" onclick="loadExample('safe')">✅ Safe</button>
+  </div>
 
-    // ─────────────────────────────────────────
-    // STEP 1: Define the rules we check against
-    // Each rule has a name and a list of
-    // suspicious phrases to look for.
-    // ─────────────────────────────────────────
+  <div id="results"></div>
 
-    const rules = [
-      {
-        name: "Urgency & Pressure",
-        phrases: ["urgent", "act now", "immediately", "within 24 hours", "expires", "limited time"]
-      },
-      {
-        name: "Threats & Fear",
-        phrases: ["will be suspended", "will be deleted", "account terminated", "unauthorized access", "suspicious activity"]
-      },
-      {
-        name: "Suspicious Link Requests",
-        phrases: ["click here", "confirm your account", "verify your identity", "login to verify", "update your billing"]
-      },
-      {
-        name: "Asking for Personal Info",
-        phrases: ["credit card", "password", "social security", "bank account", "date of birth", "provide your"]
-      },
-      {
-        name: "Impersonating a Brand",
-        phrases: ["paypal", "apple", "microsoft", "amazon", "google", "irs", "netflix", "your bank"]
-      },
-      {
-        name: "Suspicious URLs",
-        phrases: ["http://", ".xyz", ".ru", "secure-login", "verify-account", "update-billing", "-support.com"]
-      }
-    ];
+</div>
 
-    // ─────────────────────────────────────────
-    // STEP 2: The main analyze function
-    // Goes through each rule and checks if
-    // any phrase appears in the email text.
-    // Also records WHICH LINE triggered it.
-    // ─────────────────────────────────────────
+<script>
 
-    function analyze() {
-      const emailText = document.getElementById("emailInput").value.trim();
+  // words and phrases that show up a lot in phishing emails
+  // i grouped them by what type of trick they're using
+  const rules = [
+    {
+      name: "Urgency & Pressure",
+      phrases: ["urgent", "act now", "immediately", "within 24 hours", "expires", "limited time"]
+    },
+    {
+      name: "Threats",
+      phrases: ["will be suspended", "will be deleted", "account terminated", "unauthorized access", "suspicious activity"]
+    },
+    {
+      name: "Sketchy Link Requests",
+      phrases: ["click here", "confirm your account", "verify your identity", "login to verify", "update your billing"]
+    },
+    {
+      name: "Asking for Personal Info",
+      phrases: ["credit card", "password", "social security", "bank account", "date of birth", "provide your"]
+    },
+    {
+      name: "Pretending to be a Brand",
+      phrases: ["paypal", "apple", "microsoft", "amazon", "google", "irs", "netflix", "your bank"]
+    },
+    {
+      name: "Suspicious Links",
+      phrases: ["http://", ".xyz", ".ru", "secure-login", "verify-account", "update-billing"]
+    }
+  ];
 
-      if (!emailText) {
-        alert("Please paste an email first!");
-        return;
-      }
+  function scanEmail() {
+    const text = document.getElementById("emailBox").value.trim();
+    if (!text) { alert("paste an email first!"); return; }
 
-      // Split email into individual lines so we can show which line triggered
-      const lines = emailText.split("\n");
+    const lines = text.split("\n");
+    let findings = [];
+    let score = 0;
 
-      let findings = [];
-      let score = 0;
+    for (let rule of rules) {
+      let hits = [];
 
-      // Loop through each rule
-      for (let rule of rules) {
-        let matchedLines = [];
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].toLowerCase().trim();
+        if (!line) continue;
 
-        // Check every line of the email
-        for (let i = 0; i < lines.length; i++) {
-          let line = lines[i].toLowerCase().trim();
-          if (!line) continue;
-
-          // Check every phrase in this rule
-          for (let phrase of rule.phrases) {
-            if (line.includes(phrase.toLowerCase())) {
-              // Found a match — save the line and which phrase matched
-              matchedLines.push({ lineNum: i + 1, text: lines[i], phrase: phrase });
-              break; // only flag each line once per rule
-            }
+        for (let phrase of rule.phrases) {
+          if (line.includes(phrase)) {
+            hits.push({ num: i + 1, text: lines[i], phrase });
+            break;
           }
         }
+      }
 
-        // If we found matches for this rule, add it to findings
-        if (matchedLines.length > 0) {
-          findings.push({ ruleName: rule.name, lines: matchedLines });
-          score += 18; // each rule adds 18 points to the score
+      if (hits.length > 0) {
+        findings.push({ name: rule.name, hits });
+        score += 18;
+      }
+    }
+
+    score = Math.min(score, 100);
+    showResults(score, findings);
+  }
+
+  function showResults(score, findings) {
+    let cssClass, emoji, title, sub;
+
+    if (score >= 55) {
+      cssClass = "danger";
+      emoji = "🚨"; title = "High Risk";
+      sub = "This is almost definitely a phishing email. Don't click anything.";
+    } else if (score >= 30) {
+      cssClass = "warning";
+      emoji = "⚠️"; title = "Looks Suspicious";
+      sub = "Something feels off about this one. Be careful.";
+    } else if (score >= 18) {
+      cssClass = "caution";
+      emoji = "🔍"; title = "Minor Concerns";
+      sub = "A couple things stood out but it might be fine.";
+    } else {
+      cssClass = "good";
+      emoji = "✅"; title = "Looks Safe";
+      sub = "Nothing suspicious found.";
+    }
+
+    const barColor = score >= 55 ? "#e94560" : score >= 30 ? "#ff9500" : score >= 18 ? "#ffd700" : "#28a745";
+
+    let html = `
+      <div class="verdict ${cssClass}">
+        <h2>${emoji} ${title}</h2>
+        <p>${sub}</p>
+      </div>
+      <div class="score-row">
+        <span>Threat score</span>
+        <span><strong>${score} / 100</strong></span>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-fill" style="width:${score}%; background:${barColor}"></div>
+      </div>
+    `;
+
+    if (findings.length === 0) {
+      html += `<div class="safe-msg">✓ No red flags found in this email.</div>`;
+    } else {
+      html += `<div class="flags-title">Red Flags (${findings.length})</div>`;
+      for (let f of findings) {
+        html += `<div class="flag-card"><div class="flag-name">⚑ ${f.name}</div>`;
+        for (let h of f.hits) {
+          const highlighted = h.text.replace(
+            new RegExp(`(${h.phrase})`, "gi"),
+            `<span class="highlight">$1</span>`
+          );
+          html += `<div class="triggered-line">line ${h.num}: ${highlighted}</div>`;
+          html += `<div style="font-size:11px;color:#555;padding:2px 10px;">matched: "${h.phrase}"</div>`;
         }
+        html += `</div>`;
       }
-
-      // Cap score at 100
-      score = Math.min(score, 100);
-
-      // Show the results on the page
-      showResults(score, findings);
     }
 
-    // ─────────────────────────────────────────
-    // STEP 3: Show results on the page
-    // ─────────────────────────────────────────
+    html += `
+      <div class="tips">
+        <strong>A few things to keep in mind:</strong>
+        → Never click links in suspicious emails, go to the site directly.<br>
+        → Real companies won't ask for your password over email.<br>
+        → Check the actual sender address, not just the display name.<br>
+        → If something feels wrong, it probably is.
+      </div>
+    `;
 
-    function showResults(score, findings) {
-      let verdictClass, verdictEmoji, verdictText, verdictSub;
+    const r = document.getElementById("results");
+    r.innerHTML = html;
+    r.style.display = "block";
+  }
 
-      if (score >= 55) {
-        verdictClass = "high-risk";
-        verdictEmoji = "🚨";
-        verdictText  = "High Risk — Likely Phishing";
-        verdictSub   = "This email has multiple red flags. Do not click any links or reply.";
-      } else if (score >= 30) {
-        verdictClass = "suspicious";
-        verdictEmoji = "⚠️";
-        verdictText  = "Suspicious — Be Careful";
-        verdictSub   = "This email has some warning signs. Proceed with caution.";
-      } else if (score >= 18) {
-        verdictClass = "low-risk";
-        verdictEmoji = "🔍";
-        verdictText  = "Low Risk — Minor Concerns";
-        verdictSub   = "A couple of things stood out but it may be fine.";
-      } else {
-        verdictClass = "safe";
-        verdictEmoji = "✅";
-        verdictText  = "Looks Safe";
-        verdictSub   = "No major phishing patterns detected.";
-      }
+  function clearAll() {
+    document.getElementById("emailBox").value = "";
+    const r = document.getElementById("results");
+    r.innerHTML = "";
+    r.style.display = "none";
+  }
 
-      // Pick a color for the score bar
-      const barColor = score >= 55 ? "#ff4444" : score >= 30 ? "#ff9500" : score >= 18 ? "#f0c000" : "#28a745";
-
-      // Build the HTML to display
-      let html = `
-        <div class="verdict-box ${verdictClass}">
-          <h2>${verdictEmoji} ${verdictText}</h2>
-          <p>${verdictSub}</p>
-        </div>
-
-        <div class="score-section">
-          <div class="score-label">
-            <span>Threat Score</span>
-            <span><strong>${score} / 100</strong></span>
-          </div>
-          <div class="bar-bg">
-            <div class="bar-fill" style="width: ${score}%; background: ${barColor};"></div>
-          </div>
-        </div>
-      `;
-
-      // Show findings or safe message
-      if (findings.length === 0) {
-        html += `<div class="safe-msg">✓ No suspicious patterns found in this email.</div>`;
-      } else {
-        html += `<div class="section-title">⚑ Red Flags Found (${findings.length})</div>`;
-
-        for (let f of findings) {
-          html += `<div class="finding">`;
-          html += `<div class="finding-title">⚑ ${f.ruleName}</div>`;
-
-          // Show each line that triggered this rule
-          for (let match of f.lines) {
-            // Highlight the matched phrase in the line
-            let highlighted = match.text.replace(
-              new RegExp(`(${match.phrase})`, "gi"),
-              `<span>$1</span>`
-            );
-            html += `<div class="triggered-line">Line ${match.lineNum}: ${highlighted}</div>`;
-          }
-
-          html += `</div>`;
-        }
-      }
-
-      // Safety tips at the bottom
-      html += `
-        <div class="tips">
-          <div class="section-title">💡 Safety Tips</div>
-          <ul>
-            <li>Never click links in suspicious emails — go directly to the website instead</li>
-            <li>Real companies never ask for your password over email</li>
-            <li>Check the actual sender email address, not just the display name</li>
-            <li>When in doubt, call the company directly using their official number</li>
-          </ul>
-        </div>
-      `;
-
-      // Display results
-      const resultsDiv = document.getElementById("results");
-      resultsDiv.innerHTML = html;
-      resultsDiv.style.display = "block";
-    }
-
-    // ─────────────────────────────────────────
-    // HELPER: Clear everything
-    // ─────────────────────────────────────────
-
-    function clearAll() {
-      document.getElementById("emailInput").value = "";
-      const resultsDiv = document.getElementById("results");
-      resultsDiv.innerHTML = "";
-      resultsDiv.style.display = "none";
-    }
-
-    // ─────────────────────────────────────────
-    // HELPER: Load example emails
-    // ─────────────────────────────────────────
-
-    const examples = {
-      phishing: `Subject: Urgent - Your Apple ID Has Been Locked
+  const examples = {
+    phishing: `Subject: Urgent - Your Apple ID Has Been Locked
 
 Dear Valued Customer,
 
@@ -465,12 +390,9 @@ http://apple-secure-login.verify-account.xyz/login
 Please provide your full name, password, and credit card number
 to restore access immediately.
 
-This is an official security notice. Failure to respond will result
-in permanent account termination.
-
 Apple Support Team`,
 
-      safe: `Hi Sarah,
+    safe: `Hi Sarah,
 
 Just following up on our meeting from Tuesday.
 I've attached the Q3 report you asked for.
@@ -479,15 +401,15 @@ Let me know if you have any questions!
 
 Best,
 Mike`
-    };
+  };
 
-    function loadExample(type) {
-      document.getElementById("emailInput").value = examples[type];
-      const resultsDiv = document.getElementById("results");
-      resultsDiv.innerHTML = "";
-      resultsDiv.style.display = "none";
-    }
+  function loadExample(type) {
+    document.getElementById("emailBox").value = examples[type];
+    const r = document.getElementById("results");
+    r.innerHTML = "";
+    r.style.display = "none";
+  }
 
-  </script>
+</script>
 </body>
 </html>
