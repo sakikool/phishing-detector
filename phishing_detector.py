@@ -1,30 +1,24 @@
-# ─────────────────────────────────────────────
 # Phishing Email Detector
 # Built by Saket
+#
 # How it works:
-#   Step 1 - Define suspicious phrases to look for
-#   Step 2 - Scan each line of the email for matches
-#   Step 3 - Show the results with a threat score
-# ─────────────────────────────────────────────
+#   1. I made a list of phrases that show up a lot in phishing emails
+#   2. It reads through the email line by line and checks for those phrases
+#   3. If it finds something suspicious it tells you which line and why
 
 
-# ─────────────────────────────────────────────
-# STEP 1: Define the rules
-# Each rule has a name and a list of suspicious
-# phrases we want to look for in the email.
-# ─────────────────────────────────────────────
-
+# These are the phrases I'm looking for, grouped by what trick they're using
 rules = [
     {
         "name": "Urgency & Pressure",
         "phrases": ["urgent", "act now", "immediately", "within 24 hours", "expires", "limited time"]
     },
     {
-        "name": "Threats & Fear",
+        "name": "Threats",
         "phrases": ["will be suspended", "will be deleted", "account terminated", "unauthorized access", "suspicious activity"]
     },
     {
-        "name": "Suspicious Link Requests",
+        "name": "Sketchy Link Requests",
         "phrases": ["click here", "confirm your account", "verify your identity", "login to verify", "update your billing"]
     },
     {
@@ -32,134 +26,99 @@ rules = [
         "phrases": ["credit card", "password", "social security", "bank account", "date of birth", "provide your"]
     },
     {
-        "name": "Impersonating a Brand",
+        "name": "Pretending to be a Brand",
         "phrases": ["paypal", "apple", "microsoft", "amazon", "google", "irs", "netflix", "your bank"]
     },
     {
-        "name": "Suspicious URLs",
-        "phrases": ["http://", ".xyz", ".ru", "secure-login", "verify-account", "update-billing", "-support.com"]
+        "name": "Suspicious Links",
+        "phrases": ["http://", ".xyz", ".ru", "secure-login", "verify-account", "update-billing"]
     }
 ]
 
 
-# ─────────────────────────────────────────────
-# STEP 2: Scan the email
-# Goes line by line through the email and checks
-# if any suspicious phrases appear.
-# Records which line triggered each rule.
-# ─────────────────────────────────────────────
-
 def scan_email(email_text):
+    # Split the email into individual lines so I can check each one
     lines = email_text.split("\n")
     findings = []
     score = 0
 
-    # Loop through each rule
     for rule in rules:
-        matched_lines = []
+        hits = []
 
-        # Check every line of the email
         for i, line in enumerate(lines):
             line_lower = line.lower().strip()
             if not line_lower:
                 continue
 
-            # Check every phrase in this rule
+            # Check if any of the phrases show up in this line
             for phrase in rule["phrases"]:
-                if phrase.lower() in line_lower:
-                    matched_lines.append({
-                        "line_num": i + 1,
+                if phrase in line_lower:
+                    hits.append({
+                        "num": i + 1,
                         "text": line.strip(),
                         "phrase": phrase
                     })
-                    break  # only flag each line once per rule
+                    break
 
-        # If we found matches, save the finding
-        if matched_lines:
-            findings.append({
-                "rule_name": rule["name"],
-                "lines": matched_lines
-            })
-            score += 18  # each rule adds 18 points
+        if hits:
+            findings.append({"name": rule["name"], "hits": hits})
+            score += 18
 
-    # Cap score at 100
     score = min(score, 100)
     return score, findings
 
 
-# ─────────────────────────────────────────────
-# STEP 3: Show the results
-# Prints the threat score, verdict, and shows
-# exactly which lines triggered each warning.
-# ─────────────────────────────────────────────
-
 def show_results(score, findings):
     print("\n" + "=" * 50)
-    print("  PHISHING EMAIL DETECTOR — RESULTS")
+    print("  Phishing Email Detector — Results")
     print("=" * 50)
 
-    # Work out the verdict based on the score
     if score >= 55:
-        verdict = "🚨 HIGH RISK — Likely Phishing"
-        advice  = "Do not click any links or reply to this email."
+        verdict = "🚨 High Risk — This is probably a phishing email."
+        advice  = "Don't click any links or reply to this."
     elif score >= 30:
-        verdict = "⚠️  SUSPICIOUS — Be Careful"
-        advice  = "This email has some warning signs."
+        verdict = "⚠️  Looks Suspicious — Something feels off."
+        advice  = "Be careful with this one."
     elif score >= 18:
-        verdict = "🔍 LOW RISK — Minor Concerns"
-        advice  = "A couple of things stood out but may be fine."
+        verdict = "🔍 Minor Concerns — A couple things stood out."
+        advice  = "It might be fine but worth double checking."
     else:
-        verdict = "✅ LOOKS SAFE"
-        advice  = "No major phishing patterns detected."
+        verdict = "✅ Looks Safe — Nothing suspicious found."
+        advice  = "Seems okay!"
 
     print(f"\n  {verdict}")
     print(f"  {advice}")
     print(f"\n  Threat Score: {score}/100")
 
-    # Simple visual score bar
     filled = int(score / 100 * 40)
     bar = "█" * filled + "░" * (40 - filled)
     print(f"  [{bar}]")
 
     print(f"\n{'─' * 50}")
 
-    # Show findings or safe message
     if not findings:
-        print("\n  ✓ No suspicious patterns found in this email.\n")
+        print("\n  No red flags found in this email.\n")
     else:
         print(f"  Red Flags Found: {len(findings)}\n")
 
         for f in findings:
-            print(f"  ⚑  {f['rule_name']}")
-
-            # Show exactly which line triggered this rule
-            for match in f["lines"]:
-                print(f"     Line {match['line_num']}: {match['text']}")
-                print(f"     Triggered by: '{match['phrase']}'")
+            print(f"  ⚑  {f['name']}")
+            for h in f["hits"]:
+                print(f"     Line {h['num']}: {h['text']}")
+                print(f"     Matched: '{h['phrase']}'")
             print()
 
-    # Safety tips
     print("─" * 50)
-    print("  SAFETY TIPS")
+    print("  A Few Things to Keep in Mind")
     print("─" * 50)
-    tips = [
-        "Never click links in suspicious emails",
-        "Real companies never ask for your password over email",
-        "Check the actual sender address, not just the name",
-        "When in doubt, go directly to the company's website",
-    ]
-    for tip in tips:
-        print(f"  → {tip}")
-
+    print("  → Never click links in suspicious emails.")
+    print("  → Real companies won't ask for your password over email.")
+    print("  → Check the actual sender address, not just the display name.")
+    print("  → If something feels wrong, it probably is.")
     print("\n" + "=" * 50 + "\n")
 
 
-# ─────────────────────────────────────────────
-# MAIN: Run the program
-# Shows a menu and lets you paste an email
-# or load an example to test it out.
-# ─────────────────────────────────────────────
-
+# Example emails to test with
 example_phishing = """Subject: Urgent - Your Apple ID Has Been Locked
 
 Dear Valued Customer,
@@ -178,7 +137,7 @@ Apple Support Team"""
 example_safe = """Hi Sarah,
 
 Just following up on our meeting from Tuesday.
-I have attached the Q3 report you asked for.
+I've attached the Q3 report you asked for.
 
 Let me know if you have any questions!
 
@@ -188,7 +147,7 @@ Mike"""
 
 def main():
     print("\n" + "=" * 50)
-    print("     PHISHING EMAIL DETECTOR")
+    print("     Phishing Email Detector")
     print("     Built by Saket")
     print("=" * 50)
 
@@ -215,7 +174,7 @@ def main():
 
         elif choice == "3":
             print("\nPaste your email below.")
-            print("When done type END on a new line and press Enter:\n")
+            print("When done, type END on a new line and press Enter:\n")
             lines = []
             while True:
                 line = input()
@@ -231,7 +190,7 @@ def main():
         score, findings = scan_email(email_text)
         show_results(score, findings)
 
-        again = input("Analyze another email? (y/n): ").strip().lower()
+        again = input("Scan another email? (y/n): ").strip().lower()
         if again != "y":
             print("\nGoodbye!\n")
             break
