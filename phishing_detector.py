@@ -1,217 +1,221 @@
-import re
-
 # ─────────────────────────────────────────────
-#  PHISHING RULES
-#  Each rule has a label, a score weight, and
-#  a list of regex patterns to check against.
+# Phishing Email Detector
+# Built by Saket
+# How it works:
+#   Step 1 - Define suspicious phrases to look for
+#   Step 2 - Scan each line of the email for matches
+#   Step 3 - Show the results with a threat score
 # ─────────────────────────────────────────────
-
-RULES = {
-    "urgency": {
-        "label": "Urgency / Pressure Language",
-        "weight": 25,
-        "patterns": [
-            r"urgent|immediately|act now|expires|limited time|24 hours|within \d+ hours",
-            r"your account (will be|has been) (suspended|terminated|closed|locked)",
-            r"verify (immediately|now|today|your account)",
-            r"respond (immediately|asap|urgently|within)",
-        ],
-    },
-    "threats": {
-        "label": "Threats & Fear Tactics",
-        "weight": 30,
-        "patterns": [
-            r"will be (deleted|suspended|terminated|disabled|closed)",
-            r"unauthorized access|suspicious (activity|login|sign.?in)",
-            r"security (alert|warning|breach|issue|threat)",
-            r"your (account|password|information) (has been|was) (compromised|hacked|stolen)",
-        ],
-    },
-    "links": {
-        "label": "Suspicious Link / Click Requests",
-        "weight": 20,
-        "patterns": [
-            r"click (here|this link|below)",
-            r"confirm your (account|password|email|identity|details|information)",
-            r"update your (billing|payment|account|credit card) (information|details)",
-            r"login to (verify|confirm|update|access)",
-        ],
-    },
-    "sensitive": {
-        "label": "Requests for Sensitive Info",
-        "weight": 30,
-        "patterns": [
-            r"social security|ssn|date of birth|mother'?s maiden",
-            r"credit card|bank account|routing number|pin number",
-            r"password|username|login credentials",
-            r"provide your (full name|address|phone|email|information)",
-        ],
-    },
-    "spoofing": {
-        "label": "Spoofing / Impersonation",
-        "weight": 20,
-        "patterns": [
-            r"paypal|amazon|apple|microsoft|google|irs|fedex|ups|netflix|bank of america|chase|wells fargo",
-            r"dear (customer|user|member|account holder|valued)",
-            r"official (notice|notification|communication|message)",
-            r"your (apple id|google account|microsoft account|paypal account)",
-        ],
-    },
-    "grammar": {
-        "label": "Poor Grammar / Spelling Signals",
-        "weight": 15,
-        "patterns": [
-            r"kindly (click|provide|confirm|update|verify)",
-            r"do the needful|revert back to us",
-            r"\b(recieve|adress|occured|wierd|definately)\b",
-        ],
-    },
-}
 
 
 # ─────────────────────────────────────────────
-#  ANALYZE FUNCTION
+# STEP 1: Define the rules
+# Each rule has a name and a list of suspicious
+# phrases we want to look for in the email.
 # ─────────────────────────────────────────────
 
-def analyze_email(text: str) -> dict:
-    """Analyze email text and return a risk report."""
-    findings = []
-    total_score = 0
-
-    for key, rule in RULES.items():
-        matched = any(re.search(p, text, re.IGNORECASE) for p in rule["patterns"])
-        if matched:
-            findings.append({"key": key, "label": rule["label"], "weight": rule["weight"]})
-            total_score += rule["weight"]
-
-    score = min(100, total_score)
-
-    if score >= 60:
-        verdict = "🚨 HIGH RISK — Likely Phishing"
-    elif score >= 30:
-        verdict = "⚠️  SUSPICIOUS — Proceed with Caution"
-    elif score >= 10:
-        verdict = "🔍 LOW RISK — Minor Concerns"
-    else:
-        verdict = "✅ LIKELY SAFE"
-
-    return {
-        "score": score,
-        "verdict": verdict,
-        "findings": findings,
+rules = [
+    {
+        "name": "Urgency & Pressure",
+        "phrases": ["urgent", "act now", "immediately", "within 24 hours", "expires", "limited time"]
+    },
+    {
+        "name": "Threats & Fear",
+        "phrases": ["will be suspended", "will be deleted", "account terminated", "unauthorized access", "suspicious activity"]
+    },
+    {
+        "name": "Suspicious Link Requests",
+        "phrases": ["click here", "confirm your account", "verify your identity", "login to verify", "update your billing"]
+    },
+    {
+        "name": "Asking for Personal Info",
+        "phrases": ["credit card", "password", "social security", "bank account", "date of birth", "provide your"]
+    },
+    {
+        "name": "Impersonating a Brand",
+        "phrases": ["paypal", "apple", "microsoft", "amazon", "google", "irs", "netflix", "your bank"]
+    },
+    {
+        "name": "Suspicious URLs",
+        "phrases": ["http://", ".xyz", ".ru", "secure-login", "verify-account", "update-billing", "-support.com"]
     }
+]
 
 
 # ─────────────────────────────────────────────
-#  DISPLAY RESULTS
+# STEP 2: Scan the email
+# Goes line by line through the email and checks
+# if any suspicious phrases appear.
+# Records which line triggered each rule.
 # ─────────────────────────────────────────────
 
-def print_results(result: dict):
-    width = 55
-    print("\n" + "═" * width)
-    print("  PHISHGUARD — EMAIL THREAT DETECTOR")
-    print("═" * width)
+def scan_email(email_text):
+    lines = email_text.split("\n")
+    findings = []
+    score = 0
 
-    print(f"\n  {result['verdict']}")
-    print(f"  Threat Score: {result['score']}/100")
+    # Loop through each rule
+    for rule in rules:
+        matched_lines = []
 
-    # Visual score bar
-    filled = int(result["score"] / 100 * 40)
-    bar = "█" * filled + "░" * (40 - filled)
-    print(f"\n  [{bar}]")
-    print(f"   SAFE {'':>15} SUSPICIOUS {'':>5} DANGER")
+        # Check every line of the email
+        for i, line in enumerate(lines):
+            line_lower = line.lower().strip()
+            if not line_lower:
+                continue
 
-    print(f"\n{'─' * width}")
-    print(f"  THREAT INDICATORS FOUND: {len(result['findings'])}")
-    print(f"{'─' * width}")
+            # Check every phrase in this rule
+            for phrase in rule["phrases"]:
+                if phrase.lower() in line_lower:
+                    matched_lines.append({
+                        "line_num": i + 1,
+                        "text": line.strip(),
+                        "phrase": phrase
+                    })
+                    break  # only flag each line once per rule
 
-    if not result["findings"]:
-        print("\n  ✓ No known phishing patterns detected.")
-        print("    Always stay cautious with unexpected emails.\n")
+        # If we found matches, save the finding
+        if matched_lines:
+            findings.append({
+                "rule_name": rule["name"],
+                "lines": matched_lines
+            })
+            score += 18  # each rule adds 18 points
+
+    # Cap score at 100
+    score = min(score, 100)
+    return score, findings
+
+
+# ─────────────────────────────────────────────
+# STEP 3: Show the results
+# Prints the threat score, verdict, and shows
+# exactly which lines triggered each warning.
+# ─────────────────────────────────────────────
+
+def show_results(score, findings):
+    print("\n" + "=" * 50)
+    print("  PHISHING EMAIL DETECTOR — RESULTS")
+    print("=" * 50)
+
+    # Work out the verdict based on the score
+    if score >= 55:
+        verdict = "🚨 HIGH RISK — Likely Phishing"
+        advice  = "Do not click any links or reply to this email."
+    elif score >= 30:
+        verdict = "⚠️  SUSPICIOUS — Be Careful"
+        advice  = "This email has some warning signs."
+    elif score >= 18:
+        verdict = "🔍 LOW RISK — Minor Concerns"
+        advice  = "A couple of things stood out but may be fine."
     else:
-        for f in result["findings"]:
-            print(f"\n  ⚑  {f['label']}")
-            print(f"     Score contribution: +{f['weight']} pts")
+        verdict = "✅ LOOKS SAFE"
+        advice  = "No major phishing patterns detected."
 
-    print(f"\n{'─' * width}")
+    print(f"\n  {verdict}")
+    print(f"  {advice}")
+    print(f"\n  Threat Score: {score}/100")
+
+    # Simple visual score bar
+    filled = int(score / 100 * 40)
+    bar = "█" * filled + "░" * (40 - filled)
+    print(f"  [{bar}]")
+
+    print(f"\n{'─' * 50}")
+
+    # Show findings or safe message
+    if not findings:
+        print("\n  ✓ No suspicious patterns found in this email.\n")
+    else:
+        print(f"  Red Flags Found: {len(findings)}\n")
+
+        for f in findings:
+            print(f"  ⚑  {f['rule_name']}")
+
+            # Show exactly which line triggered this rule
+            for match in f["lines"]:
+                print(f"     Line {match['line_num']}: {match['text']}")
+                print(f"     Triggered by: '{match['phrase']}'")
+            print()
+
+    # Safety tips
+    print("─" * 50)
     print("  SAFETY TIPS")
-    print(f"{'─' * width}")
+    print("─" * 50)
     tips = [
         "Never click links in suspicious emails",
-        "Legit companies never ask for passwords via email",
+        "Real companies never ask for your password over email",
         "Check the actual sender address, not just the name",
         "When in doubt, go directly to the company's website",
     ]
     for tip in tips:
         print(f"  → {tip}")
 
-    print("\n" + "═" * width + "\n")
+    print("\n" + "=" * 50 + "\n")
 
 
 # ─────────────────────────────────────────────
-#  MAIN — interactive loop
+# MAIN: Run the program
+# Shows a menu and lets you paste an email
+# or load an example to test it out.
 # ─────────────────────────────────────────────
 
-EXAMPLE_PHISHING = """
+example_phishing = """Subject: Urgent - Your Apple ID Has Been Locked
+
 Dear Valued Customer,
 
-We have detected suspicious activity on your PayPal account.
-Your account will be suspended within 24 hours unless you verify
-your information immediately.
+We detected unauthorized access on your Apple ID account.
+Your account will be suspended within 24 hours unless you act now.
 
-Click here to confirm your account and update your billing
-information now to avoid termination.
+Click here to verify your identity and update your billing information:
+http://apple-secure-login.verify-account.xyz/login
 
-Please provide your full name, credit card number, and password
-to restore access.
+Please provide your full name, password, and credit card number
+to restore access immediately.
 
-Act now — this is an urgent security alert.
+Apple Support Team"""
 
-PayPal Security Team
-"""
+example_safe = """Hi Sarah,
 
-EXAMPLE_SAFE = """
-Hi Sarah,
+Just following up on our meeting from Tuesday.
+I have attached the Q3 report you asked for.
 
-Just following up on our meeting from Tuesday. I've attached
-the Q3 report you requested.
-
-Let me know if you have any questions or want to schedule
-a call to go through the numbers together.
+Let me know if you have any questions!
 
 Best,
-Mike
-"""
+Mike"""
 
 
 def main():
-    print("\n╔══════════════════════════════════════════════════════╗")
-    print("║         PHISHGUARD — Python Email Detector          ║")
-    print("╚══════════════════════════════════════════════════════╝")
-    print("\nOptions:")
-    print("  1 - Load phishing example")
-    print("  2 - Load safe email example")
-    print("  3 - Paste your own email")
-    print("  q - Quit\n")
+    print("\n" + "=" * 50)
+    print("     PHISHING EMAIL DETECTOR")
+    print("     Built by Saket")
+    print("=" * 50)
 
     while True:
-        choice = input("Choose an option (1/2/3/q): ").strip().lower()
+        print("\nOptions:")
+        print("  1 - Load phishing example")
+        print("  2 - Load safe email example")
+        print("  3 - Paste your own email")
+        print("  q - Quit")
+
+        choice = input("\nChoose an option (1/2/3/q): ").strip().lower()
 
         if choice == "q":
             print("\nGoodbye!\n")
             break
 
         elif choice == "1":
-            email_text = EXAMPLE_PHISHING
+            email_text = example_phishing
             print("\n[Loaded phishing example]")
 
         elif choice == "2":
-            email_text = EXAMPLE_SAFE
+            email_text = example_safe
             print("\n[Loaded safe email example]")
 
         elif choice == "3":
             print("\nPaste your email below.")
-            print("When done, type END on a new line and press Enter:\n")
+            print("When done type END on a new line and press Enter:\n")
             lines = []
             while True:
                 line = input()
@@ -224,8 +228,8 @@ def main():
             print("Invalid option. Please choose 1, 2, 3, or q.")
             continue
 
-        result = analyze_email(email_text)
-        print_results(result)
+        score, findings = scan_email(email_text)
+        show_results(score, findings)
 
         again = input("Analyze another email? (y/n): ").strip().lower()
         if again != "y":
